@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bg360 — Gerencia Mesa de Servicios</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:13px;background:#0f1923;color:#e0e0e0;height:100vh;overflow:hidden;}
+
+  /* ── SHELL ── */
+  .erp-shell{display:flex;height:100vh;}
+
+  /* ── SIDEBAR ── */
+  .sidebar{width:180px;min-width:180px;background:#111c26;border-right:1px solid #1e2d3d;display:flex;flex-direction:column;}
+  .sidebar-logo{padding:14px 16px;border-bottom:1px solid #1e2d3d;}
+  .sidebar-logo .brand{font-size:15px;font-weight:600;color:#fff;}
+  .sidebar-logo .sub{font-size:11px;color:#6b7f8e;}
+  .sidebar-section{padding:14px 12px 4px;font-size:10px;color:#4a6070;letter-spacing:.08em;text-transform:uppercase;}
+  .sidebar-item{display:flex;align-items:center;gap:8px;padding:7px 14px;cursor:pointer;color:#8a9db0;font-size:12.5px;border-left:2px solid transparent;}
+  .sidebar-item:hover{background:#162030;color:#c0d0dc;}
+  .sidebar-item.active{background:#162030;color:#00d4a8;border-left:2px solid #00d4a8;}
+  .sidebar-item .badge{margin-left:auto;background:#00d4a8;color:#0a1a12;font-size:10px;font-weight:700;border-radius:10px;padding:1px 6px;}
+  .sidebar-footer{margin-top:auto;padding:12px 14px;border-top:1px solid #1e2d3d;display:flex;align-items:center;gap:8px;}
+  .avatar{width:28px;height:28px;border-radius:50%;background:#00d4a8;color:#0a1a12;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;}
+  .footer-name{font-size:12px;color:#c0d0dc;font-weight:500;}
+  .footer-status{font-size:10px;color:#00d4a8;}
+
+  /* ── MAIN ── */
+  .main{flex:1;display:flex;flex-direction:column;overflow:hidden;}
+  .topbar{background:#111c26;border-bottom:1px solid #1e2d3d;padding:0 20px;display:flex;align-items:center;height:42px;gap:0;}
+  .tab{padding:0 14px;height:100%;display:flex;align-items:center;font-size:12px;color:#6b7f8e;cursor:pointer;border-bottom:2px solid transparent;gap:6px;white-space:nowrap;}
+  .tab:hover{color:#c0d0dc;}
+  .tab.active{color:#00d4a8;border-bottom:2px solid #00d4a8;}
+  .content{flex:1;overflow-y:auto;padding:20px;background:#0f1923;}
+
+  /* ── PANELS ── */
+  .panel{background:#162030;border:1px solid #1e2d3d;border-radius:8px;padding:14px;margin-bottom:12px;}
+  .panel-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+  .panel-title{font-size:12.5px;font-weight:500;color:#c0d0dc;display:flex;align-items:center;gap:6px;}
+  .panel-title i{color:#00d4a8;font-size:15px;}
+  .panel-action{font-size:11px;color:#6b7f8e;}
+
+  /* ── PAGE HEADER ── */
+  .page-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px;}
+  .page-title h1{font-size:16px;font-weight:500;color:#e0e6ec;display:flex;align-items:center;gap:8px;}
+  .page-title h1 i{color:#00d4a8;font-size:18px;}
+  .page-title p{font-size:11.5px;color:#6b7f8e;margin-top:3px;}
+  .controls-bar{display:flex;align-items:center;gap:10px;}
+  .period-selector{display:flex;background:#162030;border-radius:6px;border:1px solid #1e2d3d;overflow:hidden;}
+  .period-btn{padding:5px 12px;font-size:11.5px;color:#6b7f8e;cursor:pointer;border:none;background:none;}
+  .period-btn.active{background:#00d4a8;color:#0a1a12;font-weight:600;}
+  .date-input{background:#162030;border:1px solid #1e2d3d;border-radius:6px;padding:5px 10px;color:#8a9db0;font-size:11.5px;display:flex;align-items:center;gap:6px;}
+
+  /* ── STATUS PILLS ── */
+  .status-pills{display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap;}
+  .pill{display:flex;align-items:center;gap:5px;background:#162030;border:1px solid #1e2d3d;border-radius:20px;padding:4px 10px;font-size:11.5px;}
+  .dot{width:8px;height:8px;border-radius:50%;}
+
+  /* ── KPI CARDS ── */
+  .kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px;}
+  .kpi-card{background:#162030;border:1px solid #1e2d3d;border-radius:8px;padding:12px 14px;}
+  .kpi-label{font-size:11px;color:#6b7f8e;margin-bottom:6px;display:flex;align-items:center;gap:5px;}
+  .kpi-value{font-size:22px;font-weight:500;color:#e0e6ec;line-height:1;}
+  .kpi-sub{font-size:11px;color:#4a6070;margin-top:4px;}
+  .kpi-sub.up{color:#00d4a8;}
+  .kpi-sub.down{color:#e05252;}
+
+  /* ── TOP 5 ── */
+  .classif-item{border:1px solid #1e2d3d;border-radius:6px;margin-bottom:8px;overflow:hidden;}
+  .classif-header{display:flex;align-items:center;gap:8px;padding:8px 10px;cursor:pointer;background:#111c26;}
+  .classif-rank{width:20px;height:20px;border-radius:4px;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#0a1a12;}
+  .classif-name{flex:1;font-size:12px;color:#c0d0dc;font-weight:500;}
+  .classif-count{font-size:12px;color:#00d4a8;font-weight:600;}
+  .classif-bar-wrap{flex:0 0 80px;background:#1e2d3d;border-radius:3px;height:5px;}
+  .classif-bar{height:5px;border-radius:3px;background:#00d4a8;}
+  .classif-expand{color:#4a6070;font-size:14px;margin-left:6px;transition:transform .2s;}
+  .classif-expand.open{transform:rotate(180deg);}
+  .classif-detail{background:#0f1923;padding:10px 12px;border-top:1px solid #1e2d3d;display:none;}
+  .classif-detail.open{display:block;}
+  .detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+  .detail-col-title{font-size:10px;color:#4a6070;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;}
+  .detail-row{display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid #1a2836;font-size:11.5px;color:#8a9db0;}
+  .detail-row span:last-child{color:#c0d0dc;font-weight:500;}
+
+  /* ── PENDING TICKETS ── */
+  .pending-item{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid #1a2836;cursor:pointer;}
+  .pending-item:hover{background:#111c26;margin:0 -14px;padding-left:14px;padding-right:14px;}
+  .pending-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+  .pending-info{flex:1;}
+  .pending-title{font-size:12px;color:#c0d0dc;}
+  .pending-meta{font-size:10.5px;color:#6b7f8e;margin-top:1px;}
+  .pending-time{font-size:11px;color:#6b7f8e;}
+  .pending-arrow{color:#4a6070;font-size:14px;}
+
+  /* ── AGENTS ── */
+  .agent-item{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #1a2836;}
+  .agent-avatar{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;color:#0a1a12;}
+  .agent-name{flex:1;font-size:12px;color:#c0d0dc;}
+  .agent-bar-wrap{flex:0 0 70px;background:#1e2d3d;border-radius:3px;height:4px;}
+  .agent-bar{height:4px;border-radius:3px;}
+  .agent-count{font-size:12px;font-weight:600;min-width:24px;text-align:right;}
+
+  /* ── HEATMAP ── */
+  .hm-table{width:100%;border-collapse:separate;border-spacing:3px;}
+  .hm-table th{font-size:11px;color:#6b7f8e;font-weight:400;text-align:center;padding:2px 4px;white-space:nowrap;}
+  .hm-table th.hour-col{text-align:right;padding-right:8px;min-width:42px;}
+  .hm-cell{height:26px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:500;cursor:default;}
+  .hm-cell:hover{outline:2px solid rgba(255,255,255,.35);}
+  .hm-cell.critical{outline:2px solid #e05252;}
+  .legend-cell{width:14px;height:14px;border-radius:2px;display:inline-block;}
+  .insight-row{display:flex;gap:10px;margin-top:14px;}
+  .insight-card{flex:1;background:#111c26;border:1px solid #1e2d3d;border-radius:6px;padding:10px 12px;display:flex;align-items:center;gap:10px;}
+
+  /* ── TICKET DETAIL ── */
+  .back-btn{display:inline-flex;align-items:center;gap:6px;color:#6b7f8e;font-size:12px;cursor:pointer;margin-bottom:16px;padding:5px 10px;border:1px solid #1e2d3d;border-radius:6px;background:#162030;}
+  .back-btn:hover{color:#c0d0dc;}
+  .status-badge{display:inline-flex;align-items:center;gap:5px;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:500;background:rgba(255,193,7,.12);color:#FFC107;border:1px solid rgba(255,193,7,.25);}
+  .timer-block{background:#111c26;border:1px solid rgba(253,126,20,.3);border-radius:8px;padding:12px 14px;margin-bottom:12px;display:flex;align-items:center;gap:10px;}
+  .info-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #1a2836;}
+  .info-row:last-child{border-bottom:none;}
+  .info-label{font-size:12px;color:#6b7f8e;}
+  .info-value{font-size:12px;color:#c0d0dc;font-weight:500;text-align:right;}
+  .tl-item{display:flex;gap:10px;margin-bottom:14px;}
+  .tl-dot-wrap{display:flex;flex-direction:column;align-items:center;width:20px;flex-shrink:0;}
+  .tl-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;margin-top:3px;}
+  .tl-line{width:1px;background:#1e2d3d;flex:1;margin-top:4px;}
+  .tl-item:last-child .tl-line{display:none;}
+  .tl-action{font-size:12px;color:#c0d0dc;font-weight:500;}
+  .tl-meta{font-size:11px;color:#4a6070;margin-top:2px;}
+  .tl-note{background:#111c26;border:1px solid #1e2d3d;border-radius:5px;padding:7px 10px;margin-top:6px;font-size:12px;color:#8a9db0;line-height:1.5;}
+  .tag{background:#111c26;border:1px solid #1e2d3d;border-radius:4px;padding:3px 8px;font-size:11px;color:#8a9db0;display:inline-block;margin:3px 3px 0 0;}
+
+  /* ── VIEW TOGGLE ── */
+  #view-dashboard{display:block;}
+  #view-ticket{display:none;}
+</style>
+</head>
+<body>
+
+<div class="erp-shell">
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="sidebar-logo">
+      <div class="brand">Bg360</div>
+      <div class="sub">ERP Integral</div>
+    </div>
+    <div class="sidebar-section">Menú principal</div>
+    <div class="sidebar-item"><i class="ti ti-home"></i> Inicio</div>
+    <div class="sidebar-section">Contabilidad</div>
+    <div class="sidebar-item"><i class="ti ti-mail"></i> Correspondencia</div>
+    <div class="sidebar-item"><i class="ti ti-building-store"></i> Asoc. Proveedores</div>
+    <div class="sidebar-item"><i class="ti ti-file-text"></i> Formulario 220</div>
+    <div class="sidebar-item"><i class="ti ti-users"></i> Maestro Terceros</div>
+    <div class="sidebar-item"><i class="ti ti-refresh"></i> Conciliación</div>
+    <div class="sidebar-section">Mesa de Servicio</div>
+    <div class="sidebar-item"><i class="ti ti-ticket"></i> Tickets <span class="badge">1</span></div>
+    <div class="sidebar-item"><i class="ti ti-shield-check"></i> Admin <span class="badge">1</span></div>
+    <div class="sidebar-item active"><i class="ti ti-chart-bar"></i> Gerencia</div>
+    <div class="sidebar-section">Sistema</div>
+    <div class="sidebar-item"><i class="ti ti-settings"></i> Configuración</div>
+    <div class="sidebar-footer">
+      <div class="avatar">JF</div>
+      <div><div class="footer-name">JEFERSON FABIAN</div><div class="footer-status">En línea</div></div>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main">
+    <div class="topbar">
+      <div class="tab">Tickets — Mesa de Servicio <span style="color:#4a6070;font-size:10px;margin-left:4px">×</span></div>
+      <div class="tab">Mesa Servicio — Admin <span style="color:#4a6070;font-size:10px;margin-left:4px">×</span></div>
+      <div class="tab active">Gerencia <span style="color:#4a6070;font-size:10px;margin-left:4px">×</span></div>
+    </div>
+
+    <div class="content">
+
+      <!-- ═══════════════════════════════════════════
+           VISTA: DASHBOARD
+      ═══════════════════════════════════════════ -->
+      <div id="view-dashboard">
+
+        <div class="page-header">
+          <div class="page-title">
+            <h1><i class="ti ti-chart-pie"></i> Gerencia — Mesa de Servicio</h1>
+            <p>Panel ejecutivo · Semana actual (02 – 08 Jun 2026)</p>
+          </div>
+          <div class="controls-bar">
+            <div class="period-selector">
+              <button class="period-btn active">Semana</button>
+              <button class="period-btn">Mes</button>
+              <button class="period-btn">Rango</button>
+            </div>
+            <div class="date-input"><i class="ti ti-calendar"></i> 02 Jun – 08 Jun 2026</div>
+          </div>
+        </div>
+
+        <div class="status-pills">
+          <div class="pill"><div class="dot" style="background:#0D6EFD"></div> Abierto: 142</div>
+          <div class="pill"><div class="dot" style="background:#FFC107"></div> En gestión: 58</div>
+          <div class="pill"><div class="dot" style="background:#FD7E14"></div> Escalado: 12</div>
+          <div class="pill"><div class="dot" style="background:#28A745"></div> Cerrado: 634</div>
+          <div class="pill"><div class="dot" style="background:#DC3545"></div> Anulado: 31</div>
+        </div>
+
+        <div class="kpi-grid">
+          <div class="kpi-card">
+            <div class="kpi-label"><i class="ti ti-stack"></i> Total tickets semana</div>
+            <div class="kpi-value">877</div>
+            <div class="kpi-sub up"><i class="ti ti-arrow-up" style="font-size:10px"></i> +12% vs semana anterior</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label"><i class="ti ti-clock-hour-4"></i> Tiempo promedio atención</div>
+            <div class="kpi-value">4m 32s</div>
+            <div class="kpi-sub down"><i class="ti ti-arrow-up" style="font-size:10px"></i> +0m 48s vs semana anterior</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label"><i class="ti ti-circle-check"></i> Tasa de resolución</div>
+            <div class="kpi-value">72.3%</div>
+            <div class="kpi-sub up"><i class="ti ti-arrow-up" style="font-size:10px"></i> +4.1% vs semana anterior</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label"><i class="ti ti-alert-triangle"></i> Escalados sin cerrar</div>
+            <div class="kpi-value" style="color:#FD7E14">12</div>
+            <div class="kpi-sub down"><i class="ti ti-arrow-up" style="font-size:10px"></i> +3 vs semana anterior</div>
+          </div>
+        </div>
+
+        <!-- TOP 5 + COLUMNA DERECHA -->
+        <div style="display:grid;grid-template-columns:1fr 300px;gap:12px;margin-bottom:12px;">
+
+          <!-- TOP 5 CLASIFICACIONES -->
+          <div class="panel" style="margin-bottom:0;">
+            <div class="panel-header">
+              <div class="panel-title"><i class="ti ti-trophy"></i> Top 5 clasificaciones</div>
+              <div class="panel-action">semana actual</div>
+            </div>
+            <div id="classif-list">
+
+              <div class="classif-item">
+                <div class="classif-header" onclick="toggleClassif(this)">
+                  <div class="classif-rank" style="background:#00d4a8">1</div>
+                  <div class="classif-name">Software / Apps</div>
+                  <div class="classif-bar-wrap"><div class="classif-bar" style="width:100%"></div></div>
+                  <div class="classif-count">234</div>
+                  <i class="ti ti-chevron-down classif-expand"></i>
+                </div>
+                <div class="classif-detail">
+                  <div class="detail-grid">
+                    <div><div class="detail-col-title">Top categorías</div>
+                      <div class="detail-row"><span>Errores de sistema</span><span>98</span></div>
+                      <div class="detail-row"><span>Acceso / login</span><span>72</span></div>
+                      <div class="detail-row"><span>Actualizaciones</span><span>64</span></div>
+                    </div>
+                    <div><div class="detail-col-title">Tiendas que más llaman</div>
+                      <div class="detail-row"><span>STIRPE Guatapurí</span><span>41</span></div>
+                      <div class="detail-row"><span>Derek Ensueño</span><span>33</span></div>
+                      <div class="detail-row"><span>Equis Cacique</span><span>28</span></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="classif-item">
+                <div class="classif-header" onclick="toggleClassif(this)">
+                  <div class="classif-rank" style="background:#00a884">2</div>
+                  <div class="classif-name">Soporte SAC</div>
+                  <div class="classif-bar-wrap"><div class="classif-bar" style="width:78%"></div></div>
+                  <div class="classif-count">182</div>
+                  <i class="ti ti-chevron-down classif-expand"></i>
+                </div>
+                <div class="classif-detail">
+                  <div class="detail-grid">
+                    <div><div class="detail-col-title">Top categorías</div>
+                      <div class="detail-row"><span>Consultas cliente</span><span>84</span></div>
+                      <div class="detail-row"><span>Devoluciones</span><span>56</span></div>
+                      <div class="detail-row"><span>Facturación</span><span>42</span></div>
+                    </div>
+                    <div><div class="detail-col-title">Tiendas que más llaman</div>
+                      <div class="detail-row"><span>Derek Cañaveral</span><span>38</span></div>
+                      <div class="detail-row"><span>STIRPE Tunal</span><span>30</span></div>
+                      <div class="detail-row"><span>U82 Titan</span><span>22</span></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="classif-item">
+                <div class="classif-header" onclick="toggleClassif(this)">
+                  <div class="classif-rank" style="background:#007a60">3</div>
+                  <div class="classif-name">Red / Infraestructura</div>
+                  <div class="classif-bar-wrap"><div class="classif-bar" style="width:58%"></div></div>
+                  <div class="classif-count">136</div>
+                  <i class="ti ti-chevron-down classif-expand"></i>
+                </div>
+                <div class="classif-detail">
+                  <div class="detail-grid">
+                    <div><div class="detail-col-title">Top categorías</div>
+                      <div class="detail-row"><span>Caída de internet</span><span>62</span></div>
+                      <div class="detail-row"><span>Impresoras</span><span>44</span></div>
+                      <div class="detail-row"><span>VPN / accesos</span><span>30</span></div>
+                    </div>
+                    <div><div class="detail-col-title">Tiendas que más llaman</div>
+                      <div class="detail-row"><span>Travel LCuesta</span><span>29</span></div>
+                      <div class="detail-row"><span>Derek Primavera</span><span>24</span></div>
+                      <div class="detail-row"><span>STIRPE Cacique 2</span><span>19</span></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="classif-item">
+                <div class="classif-header" onclick="toggleClassif(this)">
+                  <div class="classif-rank" style="background:#005244">4</div>
+                  <div class="classif-name">Hardware / Dispositivos</div>
+                  <div class="classif-bar-wrap"><div class="classif-bar" style="width:42%"></div></div>
+                  <div class="classif-count">98</div>
+                  <i class="ti ti-chevron-down classif-expand"></i>
+                </div>
+                <div class="classif-detail">
+                  <div class="detail-grid">
+                    <div><div class="detail-col-title">Top categorías</div>
+                      <div class="detail-row"><span>Equipos dañados</span><span>45</span></div>
+                      <div class="detail-row"><span>Periféricos</span><span>33</span></div>
+                      <div class="detail-row"><span>Instalación</span><span>20</span></div>
+                    </div>
+                    <div><div class="detail-col-title">Tiendas que más llaman</div>
+                      <div class="detail-row"><span>STIRPE Plaza Américas</span><span>22</span></div>
+                      <div class="detail-row"><span>Derek Arboleda</span><span>18</span></div>
+                      <div class="detail-row"><span>Equis Cacique 2</span><span>15</span></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="classif-item">
+                <div class="classif-header" onclick="toggleClassif(this)">
+                  <div class="classif-rank" style="background:#003530">5</div>
+                  <div class="classif-name">Accesos y Permisos</div>
+                  <div class="classif-bar-wrap"><div class="classif-bar" style="width:31%"></div></div>
+                  <div class="classif-count">72</div>
+                  <i class="ti ti-chevron-down classif-expand"></i>
+                </div>
+                <div class="classif-detail">
+                  <div class="detail-grid">
+                    <div><div class="detail-col-title">Top categorías</div>
+                      <div class="detail-row"><span>Creación usuarios</span><span>34</span></div>
+                      <div class="detail-row"><span>Bloqueo de cuentas</span><span>24</span></div>
+                      <div class="detail-row"><span>Permisos especiales</span><span>14</span></div>
+                    </div>
+                    <div><div class="detail-col-title">Tiendas que más llaman</div>
+                      <div class="detail-row"><span>Derek La Colina</span><span>18</span></div>
+                      <div class="detail-row"><span>STIRPE Unicentro P2</span><span>14</span></div>
+                      <div class="detail-row"><span>Derek Villavicencio</span><span>11</span></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- COLUMNA DERECHA -->
+          <div style="display:flex;flex-direction:column;gap:12px;">
+
+            <!-- TICKETS PENDIENTES -->
+            <div class="panel" style="flex:1;margin-bottom:0;">
+              <div class="panel-header">
+                <div class="panel-title"><i class="ti ti-alert-circle"></i> Tickets pendientes</div>
+                <div class="panel-action">12 sin resolver</div>
+              </div>
+              <div class="pending-item" onclick="showTicket()">
+                <div class="pending-dot" style="background:#FFC107"></div>
+                <div class="pending-info">
+                  <div class="pending-title">#2043 – Soporte SAC</div>
+                  <div class="pending-meta">Derek Cañaveral · En gestión</div>
+                </div>
+                <div class="pending-time">2h 14m</div>
+                <i class="ti ti-chevron-right pending-arrow"></i>
+              </div>
+              <div class="pending-item">
+                <div class="pending-dot" style="background:#FD7E14"></div>
+                <div class="pending-info">
+                  <div class="pending-title">#2039 – Red / Infraestructura</div>
+                  <div class="pending-meta">STIRPE Guatapurí · Escalado</div>
+                </div>
+                <div class="pending-time">5h 02m</div>
+                <i class="ti ti-chevron-right pending-arrow"></i>
+              </div>
+              <div class="pending-item">
+                <div class="pending-dot" style="background:#FD7E14"></div>
+                <div class="pending-info">
+                  <div class="pending-title">#2031 – Hardware / Dispositivos</div>
+                  <div class="pending-meta">Travel LCuesta · Escalado</div>
+                </div>
+                <div class="pending-time">8h 47m</div>
+                <i class="ti ti-chevron-right pending-arrow"></i>
+              </div>
+              <div class="pending-item">
+                <div class="pending-dot" style="background:#0D6EFD"></div>
+                <div class="pending-info">
+                  <div class="pending-title">#2028 – Accesos y Permisos</div>
+                  <div class="pending-meta">Derek La Colina · Abierto</div>
+                </div>
+                <div class="pending-time">11h 20m</div>
+                <i class="ti ti-chevron-right pending-arrow"></i>
+              </div>
+              <div style="padding:8px 0;text-align:center;font-size:11px;color:#4a6070;cursor:pointer;">Ver todos los pendientes →</div>
+            </div>
+
+            <!-- RENDIMIENTO POR AGENTE -->
+            <div class="panel" style="flex:1;margin-bottom:0;">
+              <div class="panel-header">
+                <div class="panel-title"><i class="ti ti-user-check"></i> Rendimiento por agente</div>
+              </div>
+              <div class="agent-item">
+                <div class="agent-avatar" style="background:#00d4a8">GE</div>
+                <div class="agent-name">Gelvez Esneyder</div>
+                <div class="agent-bar-wrap"><div class="agent-bar" style="width:100%;background:#00d4a8"></div></div>
+                <div class="agent-count" style="color:#00d4a8">312</div>
+              </div>
+              <div class="agent-item">
+                <div class="agent-avatar" style="background:#00a884">IS</div>
+                <div class="agent-name">Ivan Sanchez</div>
+                <div class="agent-bar-wrap"><div class="agent-bar" style="width:71%;background:#00a884"></div></div>
+                <div class="agent-count" style="color:#00a884">221</div>
+              </div>
+              <div class="agent-item">
+                <div class="agent-avatar" style="background:#007a60">MR</div>
+                <div class="agent-name">María Rodríguez</div>
+                <div class="agent-bar-wrap"><div class="agent-bar" style="width:52%;background:#007a60"></div></div>
+                <div class="agent-count" style="color:#007a60">163</div>
+              </div>
+              <div class="agent-item" style="border-bottom:none;">
+                <div class="agent-avatar" style="background:#005244">CP</div>
+                <div class="agent-name">Carlos Pérez</div>
+                <div class="agent-bar-wrap"><div class="agent-bar" style="width:38%;background:#005244"></div></div>
+                <div class="agent-count" style="color:#005244">118</div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- GRÁFICA COMPARATIVA -->
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title"><i class="ti ti-chart-line"></i> Comparativo semanal — tickets abiertos vs cerrados</div>
+            <div style="display:flex;gap:12px;font-size:11px;color:#6b7f8e;">
+              <span style="display:flex;align-items:center;gap:4px;"><span style="width:10px;height:3px;background:#00d4a8;display:inline-block;border-radius:2px;"></span> Cerrados</span>
+              <span style="display:flex;align-items:center;gap:4px;"><span style="width:10px;height:2px;border-top:2px dashed #FD7E14;display:inline-block;"></span> Abiertos</span>
+            </div>
+          </div>
+          <div style="position:relative;width:100%;height:170px;">
+            <canvas id="trendChart" role="img" aria-label="Comparativo tickets abiertos vs cerrados por día">Cerrados: Lun 88, Mar 92, Mié 97, Jue 89, Vie 110, Sáb 82, Dom 76. Abiertos: Lun 22, Mar 25, Mié 20, Jue 28, Vie 19, Sáb 15, Dom 13.</canvas>
+          </div>
+        </div>
+
+        <!-- MAPA DE CALOR -->
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title"><i class="ti ti-flame"></i> Volumen de llamadas por hora y día</div>
+            <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:#6b7f8e;">
+              Bajo
+              <div style="display:flex;gap:2px;" id="hm-legend"></div>
+              Alto
+              <span style="margin-left:8px;display:flex;align-items:center;gap:4px;">
+                <span style="width:12px;height:12px;border-radius:2px;border:2px solid #e05252;display:inline-block;"></span>
+                Hora crítica
+              </span>
+            </div>
+          </div>
+          <table class="hm-table" id="hm-table">
+            <thead>
+              <tr>
+                <th class="hour-col"></th>
+                <th>Lun</th><th>Mar</th><th>Mié</th><th>Jue</th><th>Vie</th><th>Sáb</th><th>Dom</th>
+              </tr>
+            </thead>
+            <tbody id="hm-body"></tbody>
+          </table>
+          <div class="insight-row">
+            <div class="insight-card" style="border-color:rgba(224,82,82,.35);">
+              <i class="ti ti-alert-triangle" style="color:#e05252;font-size:18px;"></i>
+              <div><div style="font-size:11px;color:#6b7f8e;margin-bottom:2px;">Hora más crítica</div><div id="peak-hour" style="font-size:13px;font-weight:500;color:#c0d0dc;">—</div></div>
+            </div>
+            <div class="insight-card" style="border-color:rgba(255,193,7,.3);">
+              <i class="ti ti-clock" style="color:#FFC107;font-size:18px;"></i>
+              <div><div style="font-size:11px;color:#6b7f8e;margin-bottom:2px;">Día con más carga</div><div id="peak-day" style="font-size:13px;font-weight:500;color:#c0d0dc;">—</div></div>
+            </div>
+            <div class="insight-card" style="border-color:rgba(0,212,168,.25);">
+              <i class="ti ti-moon" style="color:#00d4a8;font-size:18px;"></i>
+              <div><div style="font-size:11px;color:#6b7f8e;margin-bottom:2px;">Hora de menor actividad</div><div id="low-hour" style="font-size:13px;font-weight:500;color:#c0d0dc;">—</div></div>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /view-dashboard -->
+
+
+      <!-- ═══════════════════════════════════════════
+           VISTA: DETALLE TICKET #2043
+      ═══════════════════════════════════════════ -->
+      <div id="view-ticket">
+
+        <div class="back-btn" onclick="showDashboard()">
+          <i class="ti ti-arrow-left"></i> Volver a Gerencia
+        </div>
+
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px;">
+          <div>
+            <div style="font-size:11px;color:#6b7f8e;margin-bottom:4px;">Mesa de Servicio · Ticket #2043</div>
+            <div style="font-size:16px;font-weight:500;color:#e0e6ec;">Soporte SAC — Consulta de cliente no resuelta</div>
+            <div style="font-size:12px;color:#6b7f8e;margin-top:3px;display:flex;align-items:center;gap:5px;">
+              <i class="ti ti-building-store" style="font-size:13px;"></i> Derek Cañaveral &nbsp;·&nbsp;
+              <i class="ti ti-calendar" style="font-size:13px;"></i> 08 Jun 2026, 09:14 a.m.
+            </div>
+          </div>
+          <div class="status-badge">
+            <span style="width:7px;height:7px;border-radius:50%;background:#FFC107;display:inline-block;"></span>
+            En gestión
+          </div>
+        </div>
+
+        <div class="timer-block">
+          <i class="ti ti-clock-hour-4" style="color:#FD7E14;font-size:20px;"></i>
+          <div style="flex:1;">
+            <div style="font-size:11px;color:#6b7f8e;">Tiempo transcurrido desde apertura</div>
+            <div style="font-size:20px;font-weight:500;color:#FD7E14;">2h 14m</div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-size:11px;color:#6b7f8e;">Promedio clasificación</div>
+            <div style="font-size:13px;color:#8a9db0;font-weight:500;margin-top:2px;">3m 40s</div>
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 300px;gap:12px;">
+
+          <!-- HISTORIAL -->
+          <div class="panel">
+            <div class="panel-header">
+              <div class="panel-title"><i class="ti ti-timeline"></i> Historial del ticket</div>
+            </div>
+            <div class="tl-item">
+              <div class="tl-dot-wrap"><div class="tl-dot" style="background:#0D6EFD;"></div><div class="tl-line"></div></div>
+              <div>
+                <div class="tl-action">Ticket creado — Abierto</div>
+                <div class="tl-meta">08 Jun 2026 · 09:14 a.m. · Sistema automático</div>
+                <div class="tl-note">Llamada entrante desde Derek Cañaveral (200). Duración: 5m 49s. Llamante: Ivan Sanchez.</div>
+              </div>
+            </div>
+            <div class="tl-item">
+              <div class="tl-dot-wrap"><div class="tl-dot" style="background:#FFC107;"></div><div class="tl-line"></div></div>
+              <div>
+                <div class="tl-action">Estado actualizado — En gestión</div>
+                <div class="tl-meta">08 Jun 2026 · 09:22 a.m. · Gelvez Esneyder</div>
+                <div class="tl-note">Se tomó el caso. Cliente reporta que no puede consultar su saldo de puntos. Se está revisando acceso al módulo SAC.</div>
+              </div>
+            </div>
+            <div class="tl-item">
+              <div class="tl-dot-wrap"><div class="tl-dot" style="background:#FFC107;"></div><div class="tl-line"></div></div>
+              <div>
+                <div class="tl-action">Nota interna agregada</div>
+                <div class="tl-meta">08 Jun 2026 · 10:05 a.m. · Gelvez Esneyder</div>
+                <div class="tl-note">Se verificó que el error es por sesión expirada del módulo. Se intentó reinicio de sesión pero persiste. Pendiente verificar con admin de sistemas.</div>
+              </div>
+            </div>
+            <div class="tl-item">
+              <div class="tl-dot-wrap"><div class="tl-dot" style="background:#6b7f8e;"></div></div>
+              <div>
+                <div class="tl-action" style="color:#6b7f8e;">Esperando resolución...</div>
+                <div class="tl-meta">Última actividad hace 69 min</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- INFO LATERAL -->
+          <div>
+            <div class="panel">
+              <div class="panel-header"><div class="panel-title"><i class="ti ti-info-circle"></i> Información del ticket</div></div>
+              <div class="info-row"><span class="info-label">Clasificación</span><span class="info-value">Soporte SAC</span></div>
+              <div class="info-row"><span class="info-label">Categoría</span><span class="info-value">Consultas cliente</span></div>
+              <div class="info-row"><span class="info-label">Subcategoría</span><span class="info-value">Saldo de puntos</span></div>
+              <div class="info-row"><span class="info-label">Tienda / Bodega</span><span class="info-value">Derek Cañaveral (200)</span></div>
+              <div class="info-row"><span class="info-label">Duración llamada</span><span class="info-value">5m 49s</span></div>
+              <div class="info-row"><span class="info-label">Fecha apertura</span><span class="info-value">08 Jun · 09:14 a.m.</span></div>
+            </div>
+
+            <div class="panel">
+              <div class="panel-header"><div class="panel-title"><i class="ti ti-user"></i> Agente asignado</div></div>
+              <div style="display:flex;align-items:center;gap:10px;">
+                <div style="width:32px;height:32px;border-radius:50%;background:#00d4a8;color:#0a1a12;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;">GE</div>
+                <div>
+                  <div style="font-size:12.5px;color:#c0d0dc;font-weight:500;">Gelvez Esneyder</div>
+                  <div style="font-size:11px;color:#6b7f8e;">Agente Mesa de Servicio</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="panel">
+              <div class="panel-header"><div class="panel-title"><i class="ti ti-tag"></i> Etiquetas</div></div>
+              <span class="tag">SAC</span>
+              <span class="tag">sesión expirada</span>
+              <span class="tag">módulo puntos</span>
+              <span class="tag">pendiente sistemas</span>
+            </div>
+
+            <div class="panel" style="border-color:rgba(253,126,20,.2);">
+              <div class="panel-header"><div class="panel-title" style="color:#FD7E14;"><i class="ti ti-alert-triangle"></i> Alerta de tiempo</div></div>
+              <div style="font-size:12px;color:#8a9db0;line-height:1.6;">
+                Este ticket lleva <span style="color:#FD7E14;font-weight:500;">2h 14m</span> en gestión, superando el promedio de la clasificación en <span style="color:#FD7E14;font-weight:500;">+1h 34m</span>.
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div><!-- /view-ticket -->
+
+    </div><!-- /content -->
+  </div><!-- /main -->
+</div><!-- /erp-shell -->
+
+<script>
+/* ── NAVEGACIÓN ── */
+function showTicket() {
+  document.getElementById('view-dashboard').style.display = 'none';
+  document.getElementById('view-ticket').style.display = 'block';
+  document.querySelector('.content').scrollTop = 0;
+}
+function showDashboard() {
+  document.getElementById('view-ticket').style.display = 'none';
+  document.getElementById('view-dashboard').style.display = 'block';
+  document.querySelector('.content').scrollTop = 0;
+}
+
+/* ── PERIOD BUTTONS ── */
+document.querySelectorAll('.period-btn').forEach(btn => {
+  btn.addEventListener('click', function() {
+    document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
+    this.classList.add('active');
+  });
+});
+
+/* ── TOP 5 ACCORDION ── */
+function toggleClassif(header) {
+  const detail = header.nextElementSibling;
+  const icon = header.querySelector('.classif-expand');
+  const isOpen = detail.classList.contains('open');
+  document.querySelectorAll('.classif-detail.open').forEach(d => d.classList.remove('open'));
+  document.querySelectorAll('.classif-expand.open').forEach(i => i.classList.remove('open'));
+  if (!isOpen) { detail.classList.add('open'); icon.classList.add('open'); }
+}
+
+/* ── GRÁFICA TENDENCIA ── */
+new Chart(document.getElementById('trendChart'), {
+  type: 'line',
+  data: {
+    labels: ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'],
+    datasets: [
+      { label: 'Cerrados', data: [88,92,97,89,110,82,76], borderColor:'#00d4a8', backgroundColor:'rgba(0,212,168,0.08)', tension:0.3, fill:true, pointRadius:3, borderWidth:2 },
+      { label: 'Abiertos', data: [22,25,20,28,19,15,13], borderColor:'#FD7E14', borderDash:[5,3], backgroundColor:'transparent', tension:0.3, fill:false, pointRadius:3, borderWidth:2 }
+    ]
+  },
+  options: {
+    responsive:true, maintainAspectRatio:false,
+    plugins:{ legend:{ display:false } },
+    scales:{
+      x:{ ticks:{ color:'#6b7f8e', font:{size:11} }, grid:{ color:'rgba(255,255,255,0.04)' } },
+      y:{ ticks:{ color:'#6b7f8e', font:{size:11} }, grid:{ color:'rgba(255,255,255,0.04)' } }
+    }
+  }
+});
+
+/* ── MAPA DE CALOR ── */
+const hmHours = ['06:00','07:00','08:00','09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00','18:00'];
+const hmDays  = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
+const hmData  = [
+  [2,1,3,2,1,0,0],[5,4,6,5,3,1,0],[12,14,11,13,10,4,2],[18,20,22,19,21,8,3],
+  [25,28,30,26,32,12,5],[22,24,20,23,28,10,4],[15,18,16,14,20,7,3],
+  [20,22,19,21,25,9,4],[18,16,20,17,22,8,3],[12,14,11,13,16,5,2],
+  [8,10,9,8,12,4,1],[5,6,5,4,7,2,1],[3,4,3,3,5,1,0]
+];
+const hmMax = Math.max(...hmData.flat());
+const CRIT  = 0.65;
+
+function hmColor(val) {
+  const r = val / hmMax;
+  if (r === 0)   return { bg:'#111c26', text:'transparent' };
+  if (r < 0.20)  return { bg:'#0d3028', text:'#4a6070' };
+  if (r < 0.40)  return { bg:'#0a4a38', text:'#6b9e8a' };
+  if (r < 0.60)  return { bg:'#0d6e52', text:'#a0d4c0' };
+  if (r < 0.75)  return { bg:'#00a884', text:'#d0f5ea' };
+  return { bg:'#00d4a8', text:'#0a2820' };
+}
+
+const tbody = document.getElementById('hm-body');
+let peakVal=0, peakHour='', peakDayName='', lowVal=999, lowHour='';
+const dayTotals = new Array(7).fill(0);
+
+hmData.forEach((row, hi) => {
+  const tr = document.createElement('tr');
+  const th = document.createElement('th');
+  th.className = 'hour-col';
+  th.textContent = hmHours[hi];
+  tr.appendChild(th);
+  row.forEach((val, di) => {
+    dayTotals[di] += val;
+    if (val > peakVal) { peakVal=val; peakHour=hmHours[hi]; peakDayName=hmDays[di]; }
+    if (hi >= 2 && val < lowVal) { lowVal=val; lowHour=hmHours[hi]; }
+    const td = document.createElement('td');
+    const c  = hmColor(val);
+    const isCrit = val/hmMax >= CRIT;
+    const cell = document.createElement('div');
+    cell.className = 'hm-cell' + (isCrit ? ' critical' : '');
+    cell.style.background = c.bg;
+    cell.style.color = c.text;
+    cell.textContent = val > 0 ? val : '';
+    cell.title = hmDays[di] + ' ' + hmHours[hi] + ' — ' + val + ' llamadas' + (isCrit ? ' ⚠ Hora crítica' : '');
+    td.appendChild(cell);
+    tr.appendChild(td);
+  });
+  tbody.appendChild(tr);
+});
+
+const maxDayIdx = dayTotals.indexOf(Math.max(...dayTotals));
+document.getElementById('peak-hour').textContent = peakHour + ' — ' + peakVal + ' llamadas';
+document.getElementById('peak-day').textContent  = hmDays[maxDayIdx] + ' — ' + dayTotals[maxDayIdx] + ' llamadas';
+document.getElementById('low-hour').textContent  = lowHour + ' — ' + lowVal + ' llamadas';
+
+const legend = document.getElementById('hm-legend');
+['#0d3028','#0a4a38','#0d6e52','#00a884','#00d4a8'].forEach(c => {
+  const s = document.createElement('span');
+  s.className = 'legend-cell';
+  s.style.background = c;
+  legend.appendChild(s);
+});
+</script>
+</body>
+</html>
